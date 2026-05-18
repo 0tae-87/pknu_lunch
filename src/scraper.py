@@ -110,8 +110,8 @@ def parse_all_restaurants(html: str) -> List[Restaurant]:
         if "Monday" in table.get_text():
             weekly_tables.append(table)
 
-    # 첫 번째 = 대연캠 학생식당, 두 번째 = 용당캠 학생식당
-    names = ["대연캠퍼스 학생식당", "용당캠퍼스 학생식당"]
+    # 첫 번째 = 라일락(대연캠), 두 번째 = 한미락(용당캠)
+    names = ["라일락 (대연캠퍼스)", "한미락 (용당캠퍼스)"]
     for i, table in enumerate(weekly_tables):
         name = names[i] if i < len(names) else f"식당 {i+1}"
         restaurant = _parse_weekly_table(table, soup)
@@ -275,16 +275,29 @@ def _parse_fixed_menu_table(table, soup) -> Optional[Restaurant]:
 def _parse_menu_items(text: str) -> List[MenuItem]:
     """셀 텍스트에서 메뉴 항목을 추출한다.
 
-    줄바꿈으로 구분된 메뉴를 각각 하나의 항목으로 처리한다.
-    "잡곡밥/현미밥" 같은 건 하나의 메뉴로 유지.
+    원본 사이트에서 줄바꿈(\n)은 실제 메뉴 구분이 아닌 경우가 있다.
+    단독 "/" 나 "&" 줄은 앞뒤 항목을 합친다.
     """
     if not text.strip():
         return []
 
-    items = []
     lines = re.split(r"[\n\r]+", text)
+    # 먼저 단독 "/" 나 "&"를 앞뒤 줄과 합치기
+    merged = []
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if line in ("/", "&") and merged:
+            # 다음 줄과 합치기
+            if i + 1 < len(lines):
+                merged[-1] = merged[-1] + line + lines[i + 1].strip()
+                i += 2
+                continue
+        merged.append(line)
+        i += 1
 
-    for line in lines:
+    items = []
+    for line in merged:
         line = line.strip()
         if not line:
             continue

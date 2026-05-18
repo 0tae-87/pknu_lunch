@@ -45,11 +45,9 @@ def get_css() -> str:
             font-size: 0.9rem; font-weight: 600; color: #555;
             margin-bottom: 6px; border-left: 3px solid #1a73e8; padding-left: 8px;
         }
-        .menu-list {
-            list-style: none; padding-left: 12px;
-        }
-        .menu-item {
-            padding: 2px 0; font-size: 0.9rem; color: #444;
+        .menu-text {
+            font-size: 0.9rem; color: #444; padding-left: 12px;
+            line-height: 1.7;
         }
         .fixed-menu-section {
             background-color: #fff; border-radius: 12px;
@@ -84,16 +82,11 @@ def get_css() -> str:
 
 
 def render_meal_category(category: MealCategory) -> str:
-    """식사 구분을 HTML 조각으로 렌더링한다."""
-    menu_items_html = "\n".join(
-        f'            <li class="menu-item">{item.name}</li>'
-        for item in category.menu_items
-    )
+    """식사 구분을 HTML 조각으로 렌더링한다. 메뉴는 컴팩트하게 표시."""
+    menu_str = " · ".join(item.name for item in category.menu_items)
     return f"""        <div class="meal-category">
             <div class="category-name">{category.category_name}</div>
-            <ul class="menu-list">
-{menu_items_html}
-            </ul>
+            <div class="menu-text">{menu_str}</div>
         </div>"""
 
 
