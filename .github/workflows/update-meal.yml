@@ -5,6 +5,9 @@ on:
     - cron: '0 0 * * 1'  # 매주 월요일 UTC 00:00 (KST 09:00)
   workflow_dispatch:  # 수동 실행
 
+permissions:
+  contents: write
+
 jobs:
   update-meal:
     runs-on: ubuntu-latest
