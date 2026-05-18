@@ -153,12 +153,13 @@ def _parse_weekly_table(table, soup) -> Optional[Restaurant]:
     if len(day_col_map) < 5:
         return None
 
-    # 날짜 행 (두 번째 행)
+    # 날짜 행 (두 번째 행) — 셀 수가 헤더와 다를 수 있으므로 순서대로 매핑
     date_cells = rows[1].find_all(["td", "th"])
     day_dates = {}
-    for idx, kr_day in day_col_map.items():
-        if idx < len(date_cells):
-            date_text = date_cells[idx].get_text(strip=True)
+    day_order_from_map = sorted(day_col_map.items(), key=lambda x: x[0])
+    for date_idx, (col_idx, kr_day) in enumerate(day_order_from_map):
+        if date_idx < len(date_cells):
+            date_text = date_cells[date_idx].get_text(strip=True)
             m = re.search(r"(\d{1,2})월\s*(\d{1,2})일", date_text)
             if m:
                 day_dates[kr_day] = f"{m.group(1)}. {m.group(2)}."
