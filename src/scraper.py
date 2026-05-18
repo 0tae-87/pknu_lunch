@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.ssl_ import create_urllib3_context
 
-from src.models import DayMeal, MealCategory, MealWeek, MenuItem
+from src.models import DayMeal, MealCategory, MealWeek, MenuItem, Restaurant
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -26,7 +26,6 @@ warnings.filterwarnings("ignore", category=urllib3.exceptions.InsecureRequestWar
 BOARD_URL = "https://www.pknu.ac.kr/main/399"
 BASE_URL = "https://www.pknu.ac.kr/main/399"
 
-# 영어 요일 → 한국어 매핑
 EN_TO_KR_DAY = {
     "Monday": "월요일",
     "Tuesday": "화요일",
@@ -34,6 +33,8 @@ EN_TO_KR_DAY = {
     "Thursday": "목요일",
     "Friday": "금요일",
 }
+
+DAY_ORDER = ["월요일", "화요일", "수요일", "목요일", "금요일"]
 
 
 class SSLAdapter(HTTPAdapter):
@@ -61,7 +62,6 @@ def find_latest_post(html: str) -> Optional[Tuple[str, str]]:
     """게시판 목록에서 가장 최근 식단 게시물의 상세 URL과 제목을 찾는다."""
     soup = BeautifulSoup(html, "lxml")
 
-    # bdlTitle 클래스 셀 내 링크에서 ?action=view&no= 패턴 찾기
     for td in soup.find_all("td", class_="bdlTitle"):
         anchor = td.find("a", href=True)
         if not anchor:
@@ -69,7 +69,6 @@ def find_latest_post(html: str) -> Optional[Tuple[str, str]]:
         title = anchor.get_text(strip=True)
         href = anchor.get("href", "")
         if "식단" in title and "action=view" in href:
-            # 상대 URL을 절대 URL로 변환
             url = urljoin(BASE_URL, href)
             return (url, title)
 
@@ -99,109 +98,186 @@ def parse_date_range(title: str) -> Optional[Tuple[str, str, str]]:
     return (date_range_str, start_date, end_date)
 
 
-def parse_meal_data(html: str) -> List[DayMeal]:
-    """상세 페이지 HTML에서 요일별 식단 데이터를 파싱한다.
-
-    부경대 식단 테이블 구조:
-    - Row 0: 구분 | Monday | Tuesday | Wednesday | Thursday | Friday | 운영정보
-    - Row 1: (날짜/빈칸) | 5월18일 | 5월19일 | ...
-    - Row 2+: 중식(가격) | 메뉴들 | 메뉴들 | ...
-    """
-    error_message = "식단 데이터를 파싱할 수 없습니다. 페이지 구조가 변경되었을 수 있습니다."
+def parse_all_restaurants(html: str) -> List[Restaurant]:
+    """상세 페이지에서 대연캠/용당캠 학생식당 데이터만 파싱한다."""
     soup = BeautifulSoup(html, "lxml")
     tables = soup.find_all("table")
+    restaurants = []
 
-    all_days = []
-
+    # 영어 요일 헤더가 있는 테이블만 수집 (주간 메뉴 식당)
+    weekly_tables = []
     for table in tables:
-        table_text = table.get_text()
-        # 영어 요일 헤더가 있는 테이블 찾기
-        if "Monday" not in table_text:
+        if "Monday" in table.get_text():
+            weekly_tables.append(table)
+
+    # 첫 번째 = 대연캠 학생식당, 두 번째 = 용당캠 학생식당
+    names = ["대연캠퍼스 학생식당", "용당캠퍼스 학생식당"]
+    for i, table in enumerate(weekly_tables):
+        name = names[i] if i < len(names) else f"식당 {i+1}"
+        restaurant = _parse_weekly_table(table, soup)
+        if restaurant:
+            restaurant.name = name
+            restaurants.append(restaurant)
+
+    return restaurants
+
+
+def _find_table_title(table, soup) -> str:
+    """테이블 앞에서 식당 이름을 찾는다."""
+    # 테이블 앞의 형제 요소에서 제목 찾기
+    prev = table.find_previous(["h2", "h3", "h4", "p", "strong", "span"])
+    if prev:
+        text = prev.get_text(strip=True)
+        # "캠퍼스" 또는 "식당" 이 포함된 텍스트를 제목으로 사용
+        if text and len(text) < 50:
+            return text
+    return ""
+
+
+def _parse_weekly_table(table, soup) -> Optional[Restaurant]:
+    """요일별 메뉴 테이블을 파싱한다."""
+    rows = table.find_all("tr")
+    if len(rows) < 3:
+        return None
+
+    # 헤더 행에서 요일 열 인덱스
+    header_cells = rows[0].find_all(["td", "th"])
+    day_col_map = {}
+    for idx, cell in enumerate(header_cells):
+        cell_text = cell.get_text(strip=True)
+        for en_day, kr_day in EN_TO_KR_DAY.items():
+            if en_day in cell_text:
+                day_col_map[idx] = kr_day
+                break
+
+    if len(day_col_map) < 5:
+        return None
+
+    # 날짜 행 (두 번째 행)
+    date_cells = rows[1].find_all(["td", "th"])
+    day_dates = {}
+    for idx, kr_day in day_col_map.items():
+        if idx < len(date_cells):
+            date_text = date_cells[idx].get_text(strip=True)
+            m = re.search(r"(\d{1,2})월\s*(\d{1,2})일", date_text)
+            if m:
+                day_dates[kr_day] = f"{m.group(1)}. {m.group(2)}."
+            else:
+                day_dates[kr_day] = ""
+
+    # 메뉴 행들
+    day_categories = {kr: [] for kr in DAY_ORDER}
+
+    for row in rows[2:]:
+        cells = row.find_all(["td", "th"])
+        if not cells:
             continue
 
-        rows = table.find_all("tr")
-        if len(rows) < 3:
+        first_text = cells[0].get_text(strip=True)
+        category_name = None
+        if "조식" in first_text:
+            category_name = "조식"
+        elif "중식" in first_text:
+            category_name = "중식"
+        elif "석식" in first_text:
+            category_name = "석식"
+
+        if category_name is None:
             continue
 
-        # 첫 번째 행에서 요일 열 인덱스 파악
-        header_cells = rows[0].find_all(["td", "th"])
-        day_col_map = {}  # col_index -> korean_day_name
-        for idx, cell in enumerate(header_cells):
+        # 가격 정보 추출
+        price_info = ""
+        price_match = re.search(r"\(([^)]*원[^)]*)\)", first_text)
+        if price_match:
+            price_info = price_match.group(1)
+
+        for col_idx, kr_day in day_col_map.items():
+            if col_idx < len(cells):
+                cell = cells[col_idx]
+                menu_text = cell.get_text(separator="\n", strip=True)
+                menu_items = _parse_menu_items(menu_text)
+                if menu_items:
+                    cat_name = category_name
+                    if price_info:
+                        cat_name = f"{category_name} ({price_info})"
+                    day_categories[kr_day].append(
+                        MealCategory(category_name=cat_name, menu_items=menu_items)
+                    )
+
+    # DayMeal 생성
+    days = []
+    for kr_day in DAY_ORDER:
+        days.append(DayMeal(
+            day_name=kr_day,
+            date=day_dates.get(kr_day, ""),
+            categories=day_categories[kr_day],
+        ))
+
+    if not any(day.categories for day in days):
+        return None
+
+    name = _find_table_title(table, soup)
+    return Restaurant(name=name, days=days)
+
+
+def _parse_fixed_menu_table(table, soup) -> Optional[Restaurant]:
+    """상시 메뉴 테이블을 파싱한다 (한식, 분식, 파스타 등)."""
+    rows = table.find_all("tr")
+    if len(rows) < 2:
+        return None
+
+    # Monday가 있으면 주간 메뉴 → 이미 처리됨
+    if "Monday" in table.get_text():
+        return None
+
+    categories = []
+    for row in rows:
+        cells = row.find_all(["td", "th"])
+        if len(cells) < 2:
+            continue
+
+        cat_name = cells[0].get_text(strip=True)
+        if not cat_name or cat_name == "구분":
+            continue
+
+        # "메뉴" 열 또는 전체 행의 나머지 셀에서 메뉴 추출
+        menu_text = ""
+        for cell in cells[1:]:
             cell_text = cell.get_text(strip=True)
-            for en_day, kr_day in EN_TO_KR_DAY.items():
-                if en_day in cell_text:
-                    day_col_map[idx] = kr_day
-                    break
-
-        if len(day_col_map) < 5:
-            continue
-
-        # 두 번째 행에서 날짜 추출
-        date_cells = rows[1].find_all(["td", "th"])
-        day_dates = {}
-        for idx, kr_day in day_col_map.items():
-            if idx < len(date_cells):
-                date_text = date_cells[idx].get_text(strip=True)
-                # "5월 18일" 형식에서 날짜 추출
-                m = re.search(r"(\d{1,2})월\s*(\d{1,2})일", date_text)
-                if m:
-                    day_dates[kr_day] = f"{m.group(1)}. {m.group(2)}."
-                else:
-                    day_dates[kr_day] = date_text
-
-        # 세 번째 행 이후에서 메뉴 데이터 추출
-        day_categories = {kr: [] for kr in EN_TO_KR_DAY.values()}
-
-        for row in rows[2:]:
-            cells = row.find_all(["td", "th"])
-            if not cells:
+            # "운영정보" 열은 건너뜀
+            if "Open" in cell_text or "☎" in cell_text:
                 continue
+            if cell_text:
+                menu_text += cell_text + "\n"
 
-            # 첫 셀에서 식사 구분 추출 (예: "중식(5,500원)")
-            first_text = cells[0].get_text(strip=True)
-            category_name = None
-            if "조식" in first_text:
-                category_name = "조식"
-            elif "중식" in first_text:
-                category_name = "중식"
-            elif "석식" in first_text:
-                category_name = "석식"
+        if menu_text.strip():
+            items = []
+            # 상시 메뉴는 "·" 또는 ","로 구분
+            parts = re.split(r"[·,]", menu_text)
+            for part in parts:
+                part = part.strip()
+                if part and len(part) > 1:
+                    # 운영시간/전화번호 제외
+                    if re.match(r"^(Open|Close|☎|※)", part):
+                        continue
+                    items.append(MenuItem(name=part))
 
-            if category_name is None:
-                continue
+            if items:
+                categories.append(MealCategory(category_name=cat_name, menu_items=items))
 
-            # 각 요일 열에서 메뉴 추출
-            for col_idx, kr_day in day_col_map.items():
-                if col_idx < len(cells):
-                    cell = cells[col_idx]
-                    menu_text = cell.get_text(separator="\n", strip=True)
-                    menu_items = _parse_menu_items(menu_text)
-                    if menu_items:
-                        day_categories[kr_day].append(
-                            MealCategory(category_name=category_name, menu_items=menu_items)
-                        )
+    if not categories:
+        return None
 
-        # DayMeal 객체 생성
-        days = []
-        for kr_day in ["월요일", "화요일", "수요일", "목요일", "금요일"]:
-            days.append(DayMeal(
-                day_name=kr_day,
-                date=day_dates.get(kr_day, ""),
-                categories=day_categories[kr_day],
-            ))
-
-        if any(day.categories for day in days):
-            all_days.extend(days)
-            break  # 첫 번째 유효 테이블만 사용
-
-    if len(all_days) == 5:
-        return all_days
-
-    raise ValueError(error_message)
+    name = _find_table_title(table, soup)
+    return Restaurant(name=name, fixed_menu=categories)
 
 
 def _parse_menu_items(text: str) -> List[MenuItem]:
-    """셀 텍스트에서 메뉴 항목을 추출한다."""
+    """셀 텍스트에서 메뉴 항목을 추출한다.
+
+    줄바꿈으로 구분된 메뉴를 각각 하나의 항목으로 처리한다.
+    "잡곡밥/현미밥" 같은 건 하나의 메뉴로 유지.
+    """
     if not text.strip():
         return []
 
@@ -212,8 +288,8 @@ def _parse_menu_items(text: str) -> List[MenuItem]:
         line = line.strip()
         if not line:
             continue
-        # 운영시간, 전화번호 등 제외
-        if re.match(r"^(Open|Close|☎|※|\*)", line):
+        # 운영시간, 전화번호, 주석 등 제외
+        if re.match(r"^(Open|Close|☎|※|\*|\d{1,2}:\d{2})", line):
             continue
         if re.match(r"^[\d\s:~\-]+$", line):
             continue
@@ -224,7 +300,6 @@ def _parse_menu_items(text: str) -> List[MenuItem]:
 
 def scrape() -> MealWeek:
     """전체 스크래핑 프로세스를 실행한다."""
-    # 1. 게시판 목록 페이지 가져오기
     try:
         html = fetch_page(BOARD_URL)
     except (requests.ConnectionError, requests.exceptions.SSLError):
@@ -234,16 +309,13 @@ def scrape() -> MealWeek:
         logger.error(f"HTTP 오류: 상태 코드 {e.response.status_code}")
         sys.exit(1)
 
-    # 2. 최신 식단 게시물 찾기
     result = find_latest_post(html)
     if result is None:
         logger.error("식단 게시물을 찾을 수 없습니다.")
         sys.exit(1)
     post_url, title = result
     logger.info(f"최신 게시물: {title}")
-    logger.info(f"URL: {post_url}")
 
-    # 3. 상세 페이지 가져오기
     try:
         detail_html = fetch_page(post_url)
     except (requests.ConnectionError, requests.exceptions.SSLError):
@@ -253,25 +325,31 @@ def scrape() -> MealWeek:
         logger.error(f"HTTP 오류: 상태 코드 {e.response.status_code}")
         sys.exit(1)
 
-    # 4. 식단 데이터 파싱
-    try:
-        days = parse_meal_data(detail_html)
-    except ValueError:
+    restaurants = parse_all_restaurants(detail_html)
+    if not restaurants:
         logger.error("식단 데이터를 파싱할 수 없습니다. 페이지 구조가 변경되었을 수 있습니다.")
         sys.exit(1)
 
-    # 5. 날짜 범위 파싱
+    logger.info(f"파싱된 식당 수: {len(restaurants)}")
+
     date_info = parse_date_range(title)
     if date_info:
         date_range_str, start_date, end_date = date_info
     else:
         date_range_str, start_date, end_date = "", "", ""
 
-    # 6. MealWeek 객체 생성 및 반환
+    # 첫 번째 주간 메뉴 식당의 days를 호환용으로 설정
+    first_days = []
+    for r in restaurants:
+        if r.days:
+            first_days = r.days
+            break
+
     return MealWeek(
         title=title,
         date_range=date_range_str,
         start_date=start_date,
         end_date=end_date,
-        days=days,
+        restaurants=restaurants,
+        days=first_days,
     )

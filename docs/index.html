@@ -9,60 +9,74 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                          "Helvetica Neue", Arial, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-            padding: 16px;
+            background-color: #f5f5f5; color: #333;
+            line-height: 1.6; padding: 16px;
         }
-        .container { max-width: 900px; margin: 0 auto; }
+        .container { max-width: 960px; margin: 0 auto; }
         header {
             text-align: center; margin-bottom: 24px; padding: 20px;
             background-color: #1a73e8; color: #fff; border-radius: 12px;
         }
         header h1 { font-size: 1.4rem; margin-bottom: 8px; }
         .date-range { font-size: 1.1rem; opacity: 0.9; }
+        .restaurant-section {
+            margin-bottom: 32px;
+        }
+        .restaurant-title {
+            font-size: 1.2rem; font-weight: 700; color: #1a73e8;
+            margin-bottom: 12px; padding-bottom: 8px;
+            border-bottom: 2px solid #1a73e8;
+        }
         .day-section {
-            background-color: #fff; border-radius: 12px; margin-bottom: 16px;
+            background-color: #fff; border-radius: 12px; margin-bottom: 12px;
             overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
         .day-header {
-            background-color: #e8f0fe; padding: 12px 20px;
-            font-size: 1.1rem; font-weight: 700; color: #1a73e8;
+            background-color: #e8f0fe; padding: 10px 20px;
+            font-size: 1rem; font-weight: 700; color: #1a73e8;
             border-bottom: 1px solid #d2e3fc;
         }
-        .day-content { padding: 16px 20px; }
-        .meal-category { margin-bottom: 16px; }
+        .day-content { padding: 14px 20px; }
+        .meal-category { margin-bottom: 12px; }
         .meal-category:last-child { margin-bottom: 0; }
         .category-name {
-            font-size: 0.95rem; font-weight: 600; color: #555;
+            font-size: 0.9rem; font-weight: 600; color: #555;
             margin-bottom: 6px; border-left: 3px solid #1a73e8; padding-left: 8px;
         }
         .menu-list {
-            list-style: none; display: flex; flex-wrap: wrap;
-            gap: 6px; padding-left: 12px;
+            list-style: none; padding-left: 12px;
         }
         .menu-item {
-            background-color: #f8f9fa; padding: 4px 10px;
-            border-radius: 6px; font-size: 0.9rem; color: #444;
+            padding: 2px 0; font-size: 0.9rem; color: #444;
         }
-        footer { text-align: center; margin-top: 24px; padding: 12px; font-size: 0.8rem; color: #888; }
+        .fixed-menu-section {
+            background-color: #fff; border-radius: 12px;
+            padding: 16px 20px; margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .fixed-cat-name {
+            font-size: 0.95rem; font-weight: 600; color: #333;
+            margin-bottom: 4px;
+        }
+        .fixed-items {
+            font-size: 0.85rem; color: #555; margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        footer {
+            text-align: center; margin-top: 24px; padding: 12px;
+            font-size: 0.8rem; color: #888;
+        }
         @media (min-width: 768px) {
             body { padding: 32px; }
             header h1 { font-size: 1.6rem; }
-            .date-range { font-size: 1.2rem; }
-            .day-header { font-size: 1.2rem; padding: 14px 24px; }
-            .day-content { padding: 20px 24px; }
-            .menu-item { font-size: 0.95rem; padding: 5px 12px; }
+            .restaurant-title { font-size: 1.3rem; }
         }
         @media (max-width: 480px) {
             header { padding: 16px; border-radius: 8px; }
             header h1 { font-size: 1.2rem; }
-            .date-range { font-size: 0.95rem; }
-            .day-section { border-radius: 8px; margin-bottom: 12px; }
-            .day-header { padding: 10px 16px; font-size: 1rem; }
-            .day-content { padding: 12px 16px; }
-            .menu-list { gap: 4px; }
-            .menu-item { font-size: 0.85rem; padding: 3px 8px; }
+            .day-section { border-radius: 8px; margin-bottom: 10px; }
+            .day-header { padding: 8px 14px; font-size: 0.95rem; }
+            .day-content { padding: 10px 14px; }
         }
     
     </style>
@@ -73,11 +87,13 @@
             <h1>부경대학교 학식 메뉴</h1>
             <div class="date-range">2026. 5. 18.(월) ~ 5. 22.(금)</div>
         </header>
+    <div class="restaurant-section">
+        <h2 class="restaurant-title">대연캠퍼스 학생식당</h2>
     <section class="day-section">
         <div class="day-header">월요일 (5. 19.)</div>
         <div class="day-content">
         <div class="meal-category">
-            <div class="category-name">중식</div>
+            <div class="category-name">중식 (학생, 교직원: 5,500원,외부인: 6,500원)</div>
             <ul class="menu-list">
             <li class="menu-item">잡곡밥</li>
             <li class="menu-item">/</li>
@@ -103,7 +119,7 @@
         <div class="day-header">화요일 (5. 20.)</div>
         <div class="day-content">
         <div class="meal-category">
-            <div class="category-name">중식</div>
+            <div class="category-name">중식 (학생, 교직원: 5,500원,외부인: 6,500원)</div>
             <ul class="menu-list">
             <li class="menu-item">잡곡밥</li>
             <li class="menu-item">/</li>
@@ -127,7 +143,7 @@
         <div class="day-header">수요일 (5. 21.)</div>
         <div class="day-content">
         <div class="meal-category">
-            <div class="category-name">중식</div>
+            <div class="category-name">중식 (학생, 교직원: 5,500원,외부인: 6,500원)</div>
             <ul class="menu-list">
             <li class="menu-item">잡곡밥</li>
             <li class="menu-item">/</li>
@@ -151,7 +167,7 @@
         <div class="day-header">목요일 (5. 22.)</div>
         <div class="day-content">
         <div class="meal-category">
-            <div class="category-name">중식</div>
+            <div class="category-name">중식 (학생, 교직원: 5,500원,외부인: 6,500원)</div>
             <ul class="menu-list">
             <li class="menu-item">잡곡밥</li>
             <li class="menu-item">/</li>
@@ -172,10 +188,10 @@
         </div>
     </section>
     <section class="day-section">
-        <div class="day-header">금요일 ()</div>
+        <div class="day-header">금요일</div>
         <div class="day-content">
         <div class="meal-category">
-            <div class="category-name">중식</div>
+            <div class="category-name">중식 (학생, 교직원: 5,500원,외부인: 6,500원)</div>
             <ul class="menu-list">
             <li class="menu-item">잡곡밥</li>
             <li class="menu-item">/</li>
@@ -195,8 +211,134 @@
         </div>
         </div>
     </section>
+    </div>
+    <div class="restaurant-section">
+        <h2 class="restaurant-title">용당캠퍼스 학생식당</h2>
+    <section class="day-section">
+        <div class="day-header">월요일 (5. 19.)</div>
+        <div class="day-content">
+        <div class="meal-category">
+            <div class="category-name">중식 (5,500원)</div>
+            <ul class="menu-list">
+            <li class="menu-item">흑미밥</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">현미밥</li>
+            <li class="menu-item">건새우근대국</li>
+            <li class="menu-item">함박조림</li>
+            <li class="menu-item">알감자조림</li>
+            <li class="menu-item">묵야채무침</li>
+            <li class="menu-item">호박볶음</li>
+            <li class="menu-item">그린샐러드</li>
+            <li class="menu-item">키위</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">오리엔탈드레싱</li>
+            <li class="menu-item">푸실리오일샐러드</li>
+            <li class="menu-item">배추김치</li>
+            </ul>
+        </div>
+        </div>
+    </section>
+    <section class="day-section">
+        <div class="day-header">화요일 (5. 20.)</div>
+        <div class="day-content">
+        <div class="meal-category">
+            <div class="category-name">중식 (5,500원)</div>
+            <ul class="menu-list">
+            <li class="menu-item">흑미밥</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">현미밥</li>
+            <li class="menu-item">콩나물김치국</li>
+            <li class="menu-item">돈육잡채</li>
+            <li class="menu-item">얼동태엿장조림</li>
+            <li class="menu-item">볼어묵볶음</li>
+            <li class="menu-item">다시마채무침</li>
+            <li class="menu-item">그린샐러드</li>
+            <li class="menu-item">흑임자</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">발사믹드레싱</li>
+            <li class="menu-item">콘슬로우샐러드</li>
+            <li class="menu-item">깍두기</li>
+            </ul>
+        </div>
+        </div>
+    </section>
+    <section class="day-section">
+        <div class="day-header">수요일 (5. 21.)</div>
+        <div class="day-content">
+        <div class="meal-category">
+            <div class="category-name">중식 (5,500원)</div>
+            <ul class="menu-list">
+            <li class="menu-item">흑미밥</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">현미밥</li>
+            <li class="menu-item">참치김치찌개</li>
+            <li class="menu-item">청양풍순살찜닭</li>
+            <li class="menu-item">온두부</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">양념장</li>
+            <li class="menu-item">연근조림</li>
+            <li class="menu-item">오이맛살냉채</li>
+            <li class="menu-item">그린샐러드</li>
+            <li class="menu-item">석류</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">오리엔탈드레싱</li>
+            <li class="menu-item">파르팔레샐러드</li>
+            <li class="menu-item">배추김치</li>
+            </ul>
+        </div>
+        </div>
+    </section>
+    <section class="day-section">
+        <div class="day-header">목요일 (5. 22.)</div>
+        <div class="day-content">
+        <div class="meal-category">
+            <div class="category-name">중식 (5,500원)</div>
+            <ul class="menu-list">
+            <li class="menu-item">흑미밥</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">현미밥</li>
+            <li class="menu-item">어묵국</li>
+            <li class="menu-item">불닭볶음</li>
+            <li class="menu-item">고구마맛탕</li>
+            <li class="menu-item">가지나물</li>
+            <li class="menu-item">미역줄기볶음</li>
+            <li class="menu-item">그린샐러드</li>
+            <li class="menu-item">참깨</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">오렌지드레싱</li>
+            <li class="menu-item">마카로니샐러드</li>
+            <li class="menu-item">깍두기</li>
+            </ul>
+        </div>
+        </div>
+    </section>
+    <section class="day-section">
+        <div class="day-header">금요일</div>
+        <div class="day-content">
+        <div class="meal-category">
+            <div class="category-name">중식 (5,500원)</div>
+            <ul class="menu-list">
+            <li class="menu-item">흑미밥</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">현미밥</li>
+            <li class="menu-item">일식카레</li>
+            <li class="menu-item">계란국</li>
+            <li class="menu-item">콘소메치킨가라아게</li>
+            <li class="menu-item">열무비빔국수</li>
+            <li class="menu-item">단무지무침</li>
+            <li class="menu-item">그린샐러드</li>
+            <li class="menu-item">흑임자</li>
+            <li class="menu-item">/</li>
+            <li class="menu-item">발사믹드레싱</li>
+            <li class="menu-item">펜네파스타샐러드</li>
+            <li class="menu-item">배추김치</li>
+            </ul>
+        </div>
+        </div>
+    </section>
+    </div>
         <footer>
-            부경대학교 학생식당 주간 식단표
+            부경대학교 학생식당 주간 식단표 | 매주 월요일 자동 업데이트
         </footer>
     </div>
 </body>

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 
@@ -24,10 +24,19 @@ class DayMeal:
 
 
 @dataclass
+class Restaurant:
+    """식당 정보"""
+    name: str               # 식당 이름 (예: "대연캠퍼스 학생식당")
+    days: List[DayMeal] = field(default_factory=list)  # 요일별 식단 (주간 메뉴)
+    fixed_menu: List[MealCategory] = field(default_factory=list)  # 상시 메뉴
+
+
+@dataclass
 class MealWeek:
     """주간 식단"""
     title: str              # 원본 게시물 제목
     date_range: str         # 날짜 범위 (예: "2026. 5. 18.(월) ~ 5. 22.(금)")
     start_date: str         # 시작일
     end_date: str           # 종료일
-    days: List[DayMeal]     # 월~금 식단 리스트 (5개)
+    restaurants: List[Restaurant]  # 식당 목록
+    days: List[DayMeal] = field(default_factory=list)  # 하위 호환용
