@@ -1,39 +1,31 @@
-# 부경대학교 학식 메뉴 스크래퍼 (PKNU Meal Scraper)
+# 부경대학교 학식 메뉴 (PKNU Lunch)
 
-부경대학교 홈페이지의 학식 게시판에서 주간 식단표를 자동으로 스크래핑하여 정적 HTML 페이지를 생성하고, GitHub Pages를 통해 배포하는 자동화 시스템입니다.
+부경대학교 학생식당 주간 식단표를 자동으로 가져와 웹페이지로 보여주는 서비스입니다.
 
-## 기능
+🔗 **바로가기**: https://0tae-87.github.io/pknu_lunch/
 
-- 부경대학교 학식 게시판(https://www.pknu.ac.kr/main/399)에서 최신 주간 식단표 자동 스크래핑
-- 반응형 정적 HTML 페이지 자동 생성
-- GitHub Actions를 통한 매주 자동 갱신
-- GitHub Pages를 통한 무료 배포
+## 지원 식당
 
-## 프로젝트 구조
+- **라일락** (대연캠퍼스 학생식당)
+- **한미락** (용당캠퍼스 학생식당)
 
-```
-├── .github/workflows/   # GitHub Actions 워크플로우
-├── src/                 # 소스 코드 (scraper, generator)
-├── docs/                # GitHub Pages 배포 디렉토리
-├── tests/               # 테스트 코드
-├── requirements.txt     # Python 의존성
-└── README.md
-```
+## 동작 방식
 
-## 설치 및 실행
+1. 매주 월요일 아침, GitHub Actions가 자동 실행
+2. 부경대 홈페이지에서 최신 식단 데이터 스크래핑
+3. 정적 HTML 페이지 생성 후 GitHub Pages로 배포
+
+수동 개입 없이 매주 자동 갱신됩니다.
+
+## 로컬 실행
 
 ```bash
 pip install -r requirements.txt
 python src/main.py
 ```
 
-## 기술 스택
+`docs/index.html`에 결과가 생성됩니다.
 
-- Python 3.x
-- requests + BeautifulSoup4 (웹 스크래핑)
-- GitHub Actions (자동화)
-- GitHub Pages (배포)
+## 문제 신고 / 개선 요청
 
-## 라이선스
-
-MIT
+식단이 안 나오거나 개선할 점이 있으면 [Issues](https://github.com/0tae-87/pknu_lunch/issues/new)에 남겨주세요.
